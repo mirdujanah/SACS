@@ -1,0 +1,15 @@
+Cloud Server
+=============
+Username - Cloud
+Password - Cloud
+
+
+Authority
+============
+Username - Authority
+Password - Authority
+
+Sanitizer
+============
+Username - Sanitizer
+Password - Sanitizer
