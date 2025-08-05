@@ -129,4 +129,4 @@ Copyright © 2023 Sanitizable Access Control System. All Rights Reserved.
 ---
 
 ## Credits
-Developed by <MIR DUJANAH>.
+Developed by MIR DUJANAH ALI HUSSAINI.
