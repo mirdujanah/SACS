@@ -19,13 +19,13 @@ A Java EE web application for secure, sanitizable access control, using JSP/Serv
 - Java JDK 8 or 11
 - Apache Ant
 - Apache Tomcat 9
-- MySQL Server 5.7+
+- MariaDB 10.5+ or MySQL 8+
 
 ---
 
 ## 1. Clone the Repository
 ```sh
-git clone https://github.com/<your-username>/SACS.git
+git clone https://github.com/mirdujanah/SACS.git
 cd SACS/SOURCE CODE/SanitizableAccessControlSystem
 ```
 
@@ -59,11 +59,25 @@ mysql -u root -p < ../../DATABASE/New\ Project\ 20230127\ 2212.sql
 ---
 
 ## 3. Configure Database Connection
-- Edit `src/java/SACS/SQLconnection.java` with your MySQL username, password, and database name if needed.
+- Configure the connection without editing source code:
+  ```sh
+  export SACS_DB_URL="jdbc:mariadb://localhost:3306/sacs"
+  export SACS_DB_USER="root"
+  export SACS_DB_PASSWORD="your-mysql-password"
+  ```
+- System properties with the same names can be used instead when starting Tomcat.
+- Passwords are stored using PBKDF2 hashes that fit the existing `VARCHAR(45)` schema.
+  Existing plaintext accounts are upgraded after their next successful login.
+
+## 4. Configure File Storage
+- Set `SACS_STORAGE_DIR` as an environment variable or JVM system property to choose
+  the upload/key storage directory.
+- If it is not set, SACS creates `sacs-storage` under the application temp directory
+  (or the user home directory when no temp directory is available).
 
 ---
 
-## 4. Install Java & Ant
+## 5. Install Java & Ant
 - **macOS:**
   ```sh
   brew install openjdk@8 ant
@@ -79,7 +93,7 @@ mysql -u root -p < ../../DATABASE/New\ Project\ 20230127\ 2212.sql
 
 ---
 
-## 5. Install Tomcat 9
+## 6. Install Tomcat 9
 - **macOS:**
   ```sh
   brew install tomcat@9
@@ -93,7 +107,7 @@ mysql -u root -p < ../../DATABASE/New\ Project\ 20230127\ 2212.sql
 
 ---
 
-## 6. Build the Project
+## 7. Build the Project
 ```sh
 ant clean dist -Dj2ee.server.home="$CATALINA_HOME"
 ```
@@ -101,7 +115,7 @@ ant clean dist -Dj2ee.server.home="$CATALINA_HOME"
 
 ---
 
-## 7. Deploy to Tomcat
+## 8. Deploy to Tomcat
 ```sh
 cp dist/SanitizableAccessControlSystem.war $CATALINA_HOME/webapps/
 # Start Tomcat
@@ -110,13 +124,13 @@ $CATALINA_HOME/bin/startup.sh   # or sudo systemctl restart tomcat9 (Ubuntu)
 
 ---
 
-## 8. Access the Application
+## 9. Access the Application
 - Open: `http://localhost:8080/SanitizableAccessControlSystem/`
 - For remote access, use your server's IP or domain.
 
 ---
 
-## 9. Troubleshooting
+## 10. Troubleshooting
 - Check Tomcat logs: `$CATALINA_HOME/logs/`
 - Check MySQL connection in `SQLconnection.java`
 - Ensure all ports (8080 for Tomcat, 3306 for MySQL) are open

@@ -1,6 +1,4 @@
 /*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
  */
 package SACS;
 
@@ -30,19 +28,13 @@ public class AuthorityLog extends HttpServlet {
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
         try (PrintWriter out = response.getWriter()) {
-            /* TODO output your page here. You may use following sample code. */
-           try {
             String name = request.getParameter("name");
             String pass = request.getParameter("password");
-            System.out.println("==============================================================================");
-            if (name.equals("Authority") && pass.equals("Authority")) {
+            if ("Authority".equals(name) && "Authority".equals(pass)) {
                 response.sendRedirect("AuthorityHome.jsp?Success");
             } else {
                 response.sendRedirect("Authority.jsp?failed");
             }
-        } catch (Exception ex) {
-                System.out.println("CloudLog.processRequest()"+ex);
-        }
         }
     }
 

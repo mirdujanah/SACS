@@ -1,15 +1,14 @@
 /*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
  */
 package SACS;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.security.GeneralSecurityException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -39,44 +38,51 @@ public class ReceiverReg extends HttpServlet {
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
         try (PrintWriter out = response.getWriter()) {
-            /* TODO output your page here. You may use following sample code. */
             String name = request.getParameter("name");
             String mail = request.getParameter("email");
             String pass = request.getParameter("pass");
             String phone = request.getParameter("phone");
             String address = request.getParameter("address");
-        
+            if (name == null || mail == null || pass == null || phone == null || address == null
+                    || name.trim().isEmpty() || mail.trim().isEmpty() || pass.isEmpty()) {
+                response.sendRedirect("Receiver.jsp?failed");
+                return;
+            }
 
-            System.out.println("pass------------>>            :" + pass);
-            System.out.println("email------------>>           :" + mail);
-            DateFormat dateFormat = new SimpleDateFormat("YYYY/MM/dd HH:mm:ss");
+            DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
             Date date = new Date();
             String time = dateFormat.format(date);
-            System.out.println("Date and Time : " + time);
-            System.out.println("name : " + name);
-            Connection conn = SQLconnection.getconnection();
-            Statement st = conn.createStatement();
-            Statement st1 = conn.createStatement();
-            ResultSet rs = st1.executeQuery("select * from datareceiver where email='" + mail + "'");
-            int count = 0;
-            while (rs.next()) {
 
-                count++;
+            final String passwordHash;
+            try {
+                passwordHash = PasswordUtil.hash(pass);
+            } catch (GeneralSecurityException ex) {
+                throw new ServletException("Unable to protect password", ex);
             }
-            if (count > 0) {
-                response.sendRedirect("Receiver.jsp?mailid");
-            } else {
 
-                try {
-                    int i = st.executeUpdate("insert into datareceiver (name,email, phone,address, pass ,ustatus, regtime,vparam)values('" + name + "','" + mail + "','" + phone + "','" + address + "','" + pass + "','No','" + time + "','No') ");
-                    if (i != 0) {
-                        System.out.println("success");
-                        response.sendRedirect("Receiver.jsp?success");
-                    } else {
-                        System.out.println("Receiver.jsp?failed");
+            try (Connection conn = SQLconnection.getconnection();
+                    PreparedStatement existing = conn.prepareStatement(
+                            "SELECT 1 FROM datareceiver WHERE email = ?");
+                    PreparedStatement insert = conn.prepareStatement(
+                            "INSERT INTO datareceiver (name, email, phone, address, pass, ustatus, regtime, vparam)"
+                            + " VALUES (?, ?, ?, ?, ?, 'No', ?, 'No')")) {
+                existing.setString(1, mail);
+                try (ResultSet rs = existing.executeQuery()) {
+                    if (rs.next()) {
+                        response.sendRedirect("Receiver.jsp?mailid");
+                        return;
                     }
-                } catch (Exception ex) {
-                    ex.printStackTrace();
+                }
+                insert.setString(1, name);
+                insert.setString(2, mail);
+                insert.setString(3, phone);
+                insert.setString(4, address);
+                insert.setString(5, passwordHash);
+                insert.setString(6, time);
+                if (insert.executeUpdate() > 0) {
+                    response.sendRedirect("Receiver.jsp?success");
+                } else {
+                    response.sendRedirect("Receiver.jsp?failed");
                 }
             }
         } catch (SQLException ex) {

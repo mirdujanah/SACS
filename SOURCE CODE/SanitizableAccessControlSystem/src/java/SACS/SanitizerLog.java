@@ -1,6 +1,4 @@
 /*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
  */
 package SACS;
 
@@ -30,19 +28,13 @@ public class SanitizerLog extends HttpServlet {
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
         try (PrintWriter out = response.getWriter()) {
-            /* TODO output your page here. You may use following sample code. */
-            try {
             String name = request.getParameter("name");
             String pass = request.getParameter("password");
-            System.out.println("==============================================================================");
-            if (name.equals("Sanitizer") && pass.equals("Sanitizer")) {
+            if ("Sanitizer".equals(name) && "Sanitizer".equals(pass)) {
                 response.sendRedirect("SanitizerHome.jsp?Success");
             } else {
                 response.sendRedirect("Sanitizer.jsp?failed");
             }
-        } catch (Exception ex) {
-                System.out.println("Sanitizer.processRequest()"+ex);
-        }
         }
     }
 

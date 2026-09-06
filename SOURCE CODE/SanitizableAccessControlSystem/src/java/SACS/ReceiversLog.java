@@ -1,15 +1,14 @@
 /*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
  */
 package SACS;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.security.GeneralSecurityException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -40,47 +39,60 @@ public class ReceiversLog extends HttpServlet {
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
         try (PrintWriter out = response.getWriter()) {
-            /* TODO output your page here. You may use following sample code. */
-             HttpSession session = request.getSession();
+            HttpSession session = request.getSession();
             String email = request.getParameter("email");
             String pass = request.getParameter("password");
-            String status = null;
-            System.out.println("Check User ID And Password : " + email + pass);
-            Connection con = SQLconnection.getconnection();
-            Statement st = con.createStatement();
-            Statement st1 = con.createStatement();
-            Statement sto = con.createStatement();
+            if (email == null || pass == null || email.trim().isEmpty() || pass.isEmpty()) {
+                response.sendRedirect("Receiver.jsp?Authentication_Failed");
+                return;
+            }
+
             DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
             Date date = new Date();
             String time = dateFormat.format(date);
-            try {
-                ResultSet rs1 = st1.executeQuery("SELECT * FROM datareceiver where email='" + email + "' AND pass='" + pass + "'");
-                System.out.println("Check 1 Pass");
-                if (rs1.next()) {
-                    ResultSet rs = st.executeQuery("SELECT * FROM datareceiver where email='" + email + "' AND pass='" + pass + "' AND ustatus='Active' ");
-                    if (rs.next()) {
-                        System.out.println("Check 2 Pass");
-                        session.setAttribute("drid", rs.getString("id"));
-                        session.setAttribute("drname", rs.getString("name"));
-                        session.setAttribute("drmail", rs.getString("email"));
-                        
 
-                        int i = sto.executeUpdate("update datareceiver set lastlog='" + time + "' where email = '" + email + "' ");
-
-                        response.sendRedirect("ReceiverHome.jsp?Success");
-                    } else {
-                        response.sendRedirect("Receiver.jsp?not");
-
+            try (Connection con = SQLconnection.getconnection();
+                    PreparedStatement login = con.prepareStatement(
+                            "SELECT id, name, email, pass FROM datareceiver WHERE email = ? AND ustatus = 'Active'");
+                    PreparedStatement update = con.prepareStatement(
+                            "UPDATE datareceiver SET lastlog = ?, pass = ? WHERE email = ?")) {
+                login.setString(1, email);
+                String storedPassword;
+                try (ResultSet rs = login.executeQuery()) {
+                    if (!rs.next()) {
+                        response.sendRedirect("Receiver.jsp?Authentication_Failed");
+                        return;
                     }
-                } else {
-                    response.sendRedirect("Receiver.jsp?Authentication_Failed");
+                    storedPassword = rs.getString("pass");
+                    boolean valid;
+                    try {
+                        valid = PasswordUtil.matches(pass, storedPassword);
+                    } catch (GeneralSecurityException ex) {
+                        throw new ServletException("Unable to verify password", ex);
+                    }
+                    if (!valid) {
+                        response.sendRedirect("Receiver.jsp?Authentication_Failed");
+                        return;
+                    }
+                    session.setAttribute("drid", rs.getString("id"));
+                    session.setAttribute("drname", rs.getString("name"));
+                    session.setAttribute("drmail", rs.getString("email"));
                 }
-
-            } catch (Exception ex) {
-                ex.printStackTrace();
+                String passwordHash;
+                try {
+                    passwordHash = PasswordUtil.isHash(storedPassword)
+                            ? storedPassword : PasswordUtil.hash(pass);
+                } catch (GeneralSecurityException ex) {
+                    throw new ServletException("Unable to protect password", ex);
+                }
+                update.setString(1, time);
+                update.setString(2, passwordHash);
+                update.setString(3, email);
+                update.executeUpdate();
+                response.sendRedirect("ReceiverHome.jsp?Success");
             }
         } catch (SQLException ex) {
-            Logger.getLogger(DPLog.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ReceiversLog.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
